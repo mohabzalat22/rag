@@ -137,7 +137,7 @@ export function AppSidebar() {
           </Collapsible>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="mb-10  px-1 border-t">
+      <SidebarFooter className="px-1 border-t">
         <div
           className={`${
             !(state == "collapsed")
