@@ -32,6 +32,7 @@ export default function ChatInput(props: Props) {
 
         <div className="ps-2 px-2 w-full">
           <textarea
+            name="message"
             value={input}
             className="w-full resize-none outline-0 items-center mt-1"
             placeholder="Ask anything"
@@ -57,7 +58,10 @@ export default function ChatInput(props: Props) {
           <Button className="bg-black text-white w-10 h-10 rounded-full">
             <PlusCircle width={25} height={25} />
           </Button>
-          <Button className="bg-black text-white w-10 h-10 rounded-full">
+          <Button
+            type="submit"
+            className="bg-black text-white w-10 h-10 rounded-full"
+          >
             <ArrowUp width={25} height={25} />
           </Button>
         </div>

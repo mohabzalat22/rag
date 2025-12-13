@@ -4,6 +4,9 @@ import asyncWrapper from "@/lib/utils/asyncWrapper";
 import { URL } from "@/lib/utils/constants";
 import { useAuth } from "@clerk/nextjs";
 import { useEffect } from "react";
+import Form from "next/form";
+import { CreateChat } from "../chats/actions";
+
 export default function Page() {
   const { isSignedIn } = useAuth();
 
@@ -19,8 +22,7 @@ export default function Page() {
         .then((data) => console.log("User synced:", data))
         .catch((err) => console.error("Sync failed:", err));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
+  });
 
   asyncWrapper(() => fetch(url));
   return (
@@ -28,7 +30,9 @@ export default function Page() {
       {/* header */}
       <h1 className="text-3xl text-center px-2 py-6">Ready when you are.</h1>
       {/* chat input */}
-      <ChatInput />
+      <Form action={CreateChat}>
+        <ChatInput />
+      </Form>
     </div>
   );
 }
