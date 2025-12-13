@@ -38,6 +38,14 @@ export async function CreateChat(formData: FormData) {
 
     redirect(`/chat/${token}`);
   } catch (err) {
+    // TODO : fix this fake redirect
+    // Re-throw Next.js redirect errors (they're not actual errors)
+    if (typeof err === "object" && err !== null && "digest" in err) {
+      const digest = (err as { digest?: string }).digest;
+      if (typeof digest === "string" && digest.startsWith("NEXT_REDIRECT")) {
+        throw err;
+      }
+    }
     console.log("ERROR creating chat: ", err);
   }
 }
