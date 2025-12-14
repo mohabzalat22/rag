@@ -1,5 +1,6 @@
 import ChatMessages from "@/components/app/ChatMessages";
-import { URL } from "@/lib/utils/constants";
+import { ChatService } from "@/services/chat.service";
+import { ChatWithMessages } from "@/types/chat";
 import { Message } from "@/types/message";
 import { notFound } from "next/navigation";
 
@@ -10,22 +11,15 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { id } = await params;
 
-  // Fetch initial messages on the server
-  const url = `${URL}/api/chats/${id}`;
+  // Fetch chat directly from database instead of HTTP request
+  const chat = (await ChatService.getByToken(id)) as ChatWithMessages | null;
 
-  const response = await fetch(url, {
-    cache: "no-store", // Ensure fresh data on each request
-  });
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      notFound();
-    }
-    throw new Error("Unable to get chat messages");
+  if (!chat) {
+    console.error(`Chat not found for token: ${id}`);
+    notFound();
   }
 
-  const data = await response.json();
-  const initialMessages: Message[] = data.data[0].messages;
+  const initialMessages: Message[] = chat.messages || [];
 
   return <ChatMessages chatToken={id} initialMessages={initialMessages} />;
 }

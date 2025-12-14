@@ -7,24 +7,28 @@ import { Message } from "@/types/message";
 import Form from "next/form";
 import { CreateMessage } from "@/app/chats/actions";
 import { useActionState } from "react";
+import { useChatInput } from "@/state/useChatInput";
+import { Actor } from "@/prisma/generated/enums";
 
 interface Props {
   chatToken: string;
   initialMessages: Message[];
 }
 
-export default function ChatMessagesClient({ chatToken, initialMessages }: Props) {
+export default function ChatMessagesClient({
+  chatToken,
+  initialMessages,
+}: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setInput } = useChatInput();
 
   const [state, formAction] = useActionState(CreateMessage, null);
 
   // helper functions
   const fetchChatMessages = async () => {
     try {
-      setLoading(true);
       const url = `${URL}/api/chats/${chatToken}`;
       const response = await fetch(url);
 
@@ -43,19 +47,40 @@ export default function ChatMessagesClient({ chatToken, initialMessages }: Props
     } catch (err) {
       setError("Failed to load chat");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
+  };
+
+  // Handle optimistic message addition
+  const handleFormSubmit = async (formData: FormData) => {
+    const userMessage = formData.get("message") as string;
+
+    if (!userMessage?.trim()) return;
+
+    // Optimistically add user message immediately
+    const optimisticMessage: Message = {
+      id: Date.now(), // temporary ID
+      chatId: 0, // temporary
+      actor: Actor.USER,
+      message: userMessage,
+    };
+
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    // Clear input immediately
+    setInput("");
+
+    // Submit form action
+    formAction(formData);
   };
 
   useEffect(() => {
     if (state?.success) {
+      // Refresh messages from server to get the actual IDs and any AI response
       fetchChatMessages();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
@@ -76,7 +101,10 @@ export default function ChatMessagesClient({ chatToken, initialMessages }: Props
           </div>
         ))}
       </div>
-      <Form action={formAction} className="sticky bottom-0 py-5 bg-white z-50 ">
+      <Form
+        action={handleFormSubmit}
+        className="sticky bottom-0 py-5 bg-white z-50 "
+      >
         <input type="text" name="token" defaultValue={chatToken} hidden />
         <ChatInput />
       </Form>
