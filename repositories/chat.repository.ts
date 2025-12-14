@@ -5,7 +5,12 @@ export const ChatRespository = {
   create: (data: CreateChat): Promise<Chat> => prisma.chat.create({ data }),
 
   getAll: (userId: number): Promise<Chat[]> =>
-    prisma.chat.findMany({ where: { userId: userId } }),
+    prisma.chat.findMany({
+      where: { userId: userId },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
 
   getById: (id: number): Promise<Chat | null> =>
     prisma.chat.findUnique({ where: { id } }),

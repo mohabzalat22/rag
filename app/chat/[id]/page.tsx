@@ -1,6 +1,6 @@
 "use client";
 import ChatInput from "@/components/app/ChatInput";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { URL } from "@/lib/utils/constants";
 import { useEffect, useState } from "react";
 import { Message } from "@/types/message";
@@ -10,6 +10,7 @@ import { useActionState } from "react";
 
 export default function Page() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +24,11 @@ export default function Page() {
       const response = await fetch(url);
 
       if (!response.ok) {
+        // If chat is not found (404), redirect to home
+        if (response.status === 404) {
+          router.push("/chat");
+          return;
+        }
         setError("Unable to get chat messages");
         return;
       }

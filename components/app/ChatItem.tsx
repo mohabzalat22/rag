@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { DeleteChat, RenameChat } from "@/app/chats/actions";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTransition, useState } from "react";
 
 interface ChatItemProps {
@@ -36,6 +36,7 @@ interface ChatItemProps {
 
 export function ChatItem({ chat }: ChatItemProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title || "");
@@ -44,7 +45,16 @@ export function ChatItem({ chat }: ChatItemProps) {
     startTransition(async () => {
       const result = await DeleteChat(chat.id);
       if (result.success) {
-        router.refresh();
+        // Check if we're currently viewing the chat being deleted
+        const isOnDeletedChat = pathname === `/chat/${chat.token}`;
+        
+        if (isOnDeletedChat) {
+          // Redirect to home if we're deleting the current chat
+          router.push("/chat");
+        } else {
+          // Just refresh the sidebar if we're on a different chat
+          router.refresh();
+        }
       } else {
         console.error("Failed to delete chat:", result.error);
       }
@@ -67,14 +77,21 @@ export function ChatItem({ chat }: ChatItemProps) {
     <>
       <SidebarMenuItem>
         <SidebarMenuButton asChild className="group/item">
-          <Link
-            href={"/chat/" + chat.token}
-            className="flex justify-between items-center"
-          >
-            <span>{chat.title || "Untitled Chat"}</span>
+          <div className="flex justify-between items-center w-full">
+            <Link
+              href={"/chat/" + chat.token}
+              className="flex-1"
+            >
+              <span>{chat.title || "Untitled Chat"}</span>
+            </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" aria-label="Open menu" size="icon-sm">
+                <Button 
+                  variant="ghost" 
+                  aria-label="Open menu" 
+                  size="icon-sm"
+                  onClick={(e) => e.preventDefault()} // Prevent link navigation
+                >
                   <Ellipsis />
                 </Button>
               </DropdownMenuTrigger>
@@ -98,7 +115,7 @@ export function ChatItem({ chat }: ChatItemProps) {
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-          </Link>
+          </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
 

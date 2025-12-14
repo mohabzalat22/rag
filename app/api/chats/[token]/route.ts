@@ -18,7 +18,12 @@ export async function GET(request: NextRequest, { params }: Params) {
   const { token } = await params;
   try {
     const chat = await ChatService.getByToken(token);
-    if (chat) return Success(true, 200, "chat retrived", [chat]);
+    if (chat) {
+      return Success(true, 200, "chat retrived", [chat]);
+    } else {
+      // Chat not found (could be deleted)
+      return Error(true, 404, "Chat not found", ["The requested chat does not exist"]);
+    }
   } catch (err: unknown) {
     console.log("ERROR getting chat by token", err);
     return Error(true, 400, "Failed to retrieve chat", [getErrorMessage(err)]);
