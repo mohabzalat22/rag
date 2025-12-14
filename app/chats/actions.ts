@@ -6,6 +6,7 @@ import { UserService } from "@/services/user.service";
 import { MessageService } from "@/services/message.service";
 import { redirect } from "next/navigation";
 import { Actor } from "@/prisma/generated/enums";
+import { revalidatePath } from "next/cache";
 
 export async function CreateChat(formData: FormData) {
   const title = "title";
@@ -47,5 +48,66 @@ export async function CreateChat(formData: FormData) {
       }
     }
     console.log("ERROR creating chat: ", err);
+  }
+}
+
+export async function CreateMessage(
+  prevState: { success: boolean } | null,
+  formData: FormData
+): Promise<{ success: boolean; error?: string }> {
+  const token = formData.get("token") as string;
+  // we get only user message from the form
+  const formMessage = formData.get("message") as string;
+  try {
+    // validation
+    if (!token) throw Error("Error in chat id (token)");
+    if (!formMessage) throw Error("empty message");
+
+    const chat = await ChatService.getByToken(token);
+    if (!chat) throw Error("chat not found");
+
+    const messageData = {
+      chatId: chat.id,
+      actor: Actor.USER,
+      message: formMessage,
+    };
+    const message = await MessageService.create(messageData);
+    if (!message) throw Error("unable to create new message");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    revalidatePath(`/chat/${token}`);
+    return { success: true };
+  } catch (err) {
+    console.log("ERROR creating chat: ", err);
+    return { success: false, error: String(err) };
+  }
+}
+
+export async function DeleteChat(chatId: number) {
+  try {
+    if (!chatId) throw Error("Error in chat id");
+
+    await ChatService.deleteById(chatId);
+    revalidatePath("/chat");
+
+    return { success: true };
+  } catch (err) {
+    console.log("ERROR deleting chat: ", err);
+    return { success: false, error: String(err) };
+  }
+}
+
+export async function RenameChat(chatId: number, newTitle: string) {
+  try {
+    if (!chatId) throw Error("Error in chat id");
+    if (!newTitle || newTitle.trim() === "")
+      throw Error("Title cannot be empty");
+
+    await ChatService.update(chatId, { title: newTitle.trim() });
+    revalidatePath("/chat");
+
+    return { success: true };
+  } catch (err) {
+    console.log("ERROR renaming chat: ", err);
+    return { success: false, error: String(err) };
   }
 }

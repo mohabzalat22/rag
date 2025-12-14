@@ -6,7 +6,7 @@ export const ChatService = {
   create: (data: CreateChat) =>
     asyncWrapper<Chat | null>(() => ChatRespository.create(data)),
 
-  getAll: () => asyncWrapper<Chat[] | null>(() => ChatRespository.getAll()),
+  getAll: (userId: number) => asyncWrapper<Chat[] | null>(() => ChatRespository.getAll(userId)),
 
   getById: (id: number) =>
     asyncWrapper<Chat | null>(() => ChatRespository.getById(id)),

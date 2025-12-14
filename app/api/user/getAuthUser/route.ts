@@ -2,6 +2,14 @@ import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { UserService } from "@/services/user.service";
 import { Success, Error } from "@/lib/utils/response";
+//TODO: better error handling
+function getErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "message" in err) {
+    return String((err as { message: unknown }).message);
+  }
+  if (typeof err === "string") return err;
+  return "Unknown error occurred";
+}
 
 export async function GET() {
   const clerkUser = await currentUser();
@@ -14,8 +22,10 @@ export async function GET() {
     if (user) {
       return Success(true, 200, "hi", [user]);
     }
-  } catch (error) {
-    console.error("Error getting authenticated user:", error);
-    return Error(false, 400, "Error getting authenticated user", [error]);
+  } catch (err) {
+    console.error("Error getting authenticated user:", err);
+    return Error(false, 400, "Error getting authenticated user", [
+      getErrorMessage(err),
+    ]);
   }
 }
