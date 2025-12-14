@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 import Link from "next/link";
 
 interface Chat {
@@ -47,13 +47,10 @@ export function SearchChatsDialog({ chats }: SearchChatsDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="w-full justify-start px-2! font-normal"
-        >
+        <SidebarMenuButton>
           <Search className="w-4 h-4" />
           <span>Search chats</span>
-        </Button>
+        </SidebarMenuButton>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[600px]">
         <DialogHeader>

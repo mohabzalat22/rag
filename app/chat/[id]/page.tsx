@@ -1,87 +1,31 @@
-"use client";
-import ChatInput from "@/components/app/ChatInput";
-import { useParams, useRouter } from "next/navigation";
+import ChatMessages from "@/components/app/ChatMessages";
 import { URL } from "@/lib/utils/constants";
-import { useEffect, useState } from "react";
 import { Message } from "@/types/message";
-import Form from "next/form";
-import { CreateMessage } from "@/app/chats/actions";
-import { useActionState } from "react";
+import { notFound } from "next/navigation";
 
-export default function Page() {
-  const { id } = useParams<{ id: string }>();
-  const router = useRouter();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-  const [state, formAction] = useActionState(CreateMessage, null);
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
 
-  // helper functions
-  const fetchChatMessages = async () => {
-    try {
-      const url = `${URL}/api/chats/${id}`;
-      const response = await fetch(url);
+  // Fetch initial messages on the server
+  const url = `${URL}/api/chats/${id}`;
 
-      if (!response.ok) {
-        // If chat is not found (404), redirect to home
-        if (response.status === 404) {
-          router.push("/chat");
-          return;
-        }
-        setError("Unable to get chat messages");
-        return;
-      }
+  const response = await fetch(url, {
+    cache: "no-store", // Ensure fresh data on each request
+  });
 
-      const data = await response.json();
-      setMessages(data.data[0].messages);
-    } catch (err) {
-      setError("Failed to load chat");
-      console.error(err);
-    } finally {
-      setLoading(false);
+  if (!response.ok) {
+    if (response.status === 404) {
+      notFound();
     }
-  };
+    throw new Error("Unable to get chat messages");
+  }
 
-  useEffect(() => {
-    if (id) {
-      fetchChatMessages();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  const data = await response.json();
+  const initialMessages: Message[] = data.data[0].messages;
 
-  useEffect(() => {
-    if (state?.success) {
-      fetchChatMessages();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
-
-  return (
-    <div className="">
-      {/* preview chat */}
-      {/* TODO: mb + scroll to button */}
-      <div className="z-20 mb-[100px]">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.actor === "USER" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <p className="text-gray-800 bg-gray-100 rounded-xl p-2 my-5 max-w-120 wrap-break-word">
-              {message.message}
-            </p>
-          </div>
-        ))}
-      </div>
-      <Form action={formAction} className="sticky bottom-0 py-5 bg-white z-50 ">
-        <input type="text" name="token" defaultValue={id} hidden />
-        <ChatInput />
-      </Form>
-    </div>
-  );
+  return <ChatMessages chatToken={id} initialMessages={initialMessages} />;
 }
