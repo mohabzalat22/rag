@@ -9,14 +9,14 @@ import { Actor } from "@/prisma/generated/enums";
 import { revalidatePath } from "next/cache";
 
 export async function CreateChat(formData: FormData) {
-  const title = "title";
+  const formMessage = formData.get("message") as string;
   const token = randomUUID();
   const clerkUser = await currentUser();
-  const formMessage = formData.get("message") as string;
-
+  
   try {
     // validation
     if (!formMessage) throw Error("empty message");
+    const title = formMessage.split(" ").slice(0, 3).join(" ");
 
     if (!clerkUser) throw Error("clerk user not found");
     const user = await UserService.getByClerkId(clerkUser.id);

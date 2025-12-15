@@ -1,5 +1,6 @@
 import { MessageService } from "./message.service";
 import { Actor } from "@/prisma/generated/enums";
+import prisma from "@/prisma/prisma";
 import { GoogleGenAI } from "@google/genai";
 
 // Validate API key exists
@@ -30,7 +31,9 @@ export const OpenaiService = {
       .map((m) => `${m.actor === Actor.USER ? "User" : "Assistant"}: ${m.message}`)
       .join("\n");
 
-    const userPrompt = `Previous conversation:\n${conversationHistory}\n\nPlease respond to the last message.`;
+    const prompt = await prisma.prompt.findFirst();
+
+    const userPrompt = `preprompt: ${prompt}. Previous conversation:\n${conversationHistory}\n\n`;
 
     // Create a ReadableStream that streams Gemini response in SSE format
     const stream = new ReadableStream({

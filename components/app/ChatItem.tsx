@@ -82,7 +82,7 @@ export function ChatItem({ chat }: ChatItemProps) {
               href={"/chat/" + chat.token}
               className="flex-1"
             >
-              <span>{chat.title || "Untitled Chat"}</span>
+              <span className="truncate block max-w-full">{chat.title || "Untitled Chat"}</span>
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -22,7 +22,8 @@ model User {
   /**
    * relations
    */
-  chats Chat[]
+  chats  Chat[]
+  prompt Prompt?
 }
 
 model Chat {
@@ -54,4 +55,15 @@ model Message {
    * relations
    */
   chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Prompt {
+  id     Int    @id @default(autoincrement())
+  prompt String 
+  userId Int    @unique
+
+  /**
+   * relations
+   */
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
