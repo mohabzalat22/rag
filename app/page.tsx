@@ -6,10 +6,10 @@ import { Hotel, Car, Search, Sparkles, Globe, Clock } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="container mx-auto">
       <Header />
 
-      <main className="flex-1">
+      <main>
         {/* Hero Section */}
         <section className="container px-4 md:px-8 py-20 md:py-32">
           <div className="max-w-4xl mx-auto text-center space-y-8">
