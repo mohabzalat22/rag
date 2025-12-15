@@ -6,8 +6,8 @@ export const MessageService = {
   create: (data: CreateMessage) =>
     asyncWrapper<Message | null>(() => MessageRespository.create(data)),
 
-  getAll: () =>
-    asyncWrapper<Message[] | null>(() => MessageRespository.getAll()),
+  getAll: (chatId: number) =>
+    asyncWrapper<Message[] | null>(() => MessageRespository.getAll(chatId)),
 
   getById: (id: number) =>
     asyncWrapper<Message | null>(() => MessageRespository.getById(id)),

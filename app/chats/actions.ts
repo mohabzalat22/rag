@@ -54,7 +54,7 @@ export async function CreateChat(formData: FormData) {
 export async function CreateMessage(
   prevState: { success: boolean } | null,
   formData: FormData
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; shouldStream?: boolean }> {
   const token = formData.get("token") as string;
   // we get only user message from the form
   const formMessage = formData.get("message") as string;
@@ -75,7 +75,8 @@ export async function CreateMessage(
     if (!message) throw Error("unable to create new message");
     await new Promise((resolve) => setTimeout(resolve, 100));
     revalidatePath(`/chat/${token}`);
-    return { success: true };
+    // Signal that streaming should start
+    return { success: true, shouldStream: true };
   } catch (err) {
     console.log("ERROR creating chat: ", err);
     return { success: false, error: String(err) };

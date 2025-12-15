@@ -5,7 +5,8 @@ export const MessageRespository = {
   create: (data: CreateMessage): Promise<Message> =>
     prisma.message.create({ data }),
 
-  getAll: (): Promise<Message[]> => prisma.message.findMany(),
+  getAll: (chatId: number): Promise<Message[]> =>
+    prisma.message.findMany({ where: { chatId: chatId } }),
 
   getById: (id: number): Promise<Message | null> =>
     prisma.message.findUnique({ where: { id } }),

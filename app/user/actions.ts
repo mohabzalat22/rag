@@ -3,13 +3,13 @@ import { currentUser } from "@clerk/nextjs/server";
 import { UserService } from "@/services/user.service";
 
 export async function syncUser() {
-  const clerkUser = await currentUser();
-
-  if (!clerkUser) {
-    return { success: false, error: "Not authenticated" };
-  }
-
   try {
+    const clerkUser = await currentUser();
+
+    if (!clerkUser) {
+      return { success: false, error: "Not authenticated" };
+    }
+
     const userExists = await UserService.getByClerkId(clerkUser.id);
 
     if (!userExists) {
@@ -28,7 +28,7 @@ export async function syncUser() {
 
     return { success: true };
   } catch (error) {
-    console.error("Error syncing user to database:", error);
+    console.error("Error syncing user:", error);
     return { success: false, error: "Unable to sync user" };
   }
 }
