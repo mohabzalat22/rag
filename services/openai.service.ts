@@ -46,6 +46,7 @@ export const OpenaiService = {
             model: "gemini-2.5-flash",
             contents: userPrompt,
           });
+          if (!response) throw Error("Cannot stapplish a connection. ")
 
           // Stream the response character by character for better UX
           for await (const chunk of response) {
