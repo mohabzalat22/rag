@@ -202,7 +202,7 @@ export default function ChatMessagesClient({
         ))}
 
         {/* Streaming message it will be removed after complete response*/}
-        {isStreaming && streamingMessage && (
+        {streamingMessage && (
           <div className="flex justify-start">
             <div className="text-gray-800 bg-gray-100 rounded-xl p-4 my-5 max-w-3xl prose prose-sm">
               <ReactMarkdown>{streamingMessage}</ReactMarkdown>
