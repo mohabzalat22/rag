@@ -1,22 +1,12 @@
 import { MessageService } from "./message.service";
 import { Actor } from "@/prisma/generated/enums";
 import prisma from "@/prisma/prisma";
-import { GoogleGenAI } from "@google/genai";
-
-// Validate API key exists
-if (!process.env.GOOGLE_SECRET) {
-  throw new Error("GOOGLE_SECRET environment variable is not set");
-}
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_SECRET,
-});
 
 export const OpenaiService = {
   /**
-   * Generate a streaming response from Google Gemini based on chat context
+   * Generate a streaming response from Ollama based on chat context
    * @param chatId - The chat ID to get message context from
-   * @returns ReadableStream with Gemini response
+   * @returns ReadableStream with Ollama response
    */
   respond: async (chatId: number) => {
     // Get all messages from specific chat for context
@@ -33,38 +23,52 @@ export const OpenaiService = {
 
     const prompt = await prisma.prompt.findFirst();
 
-    const userPrompt = `preprompt: ${prompt}. Previous conversation:\n${conversationHistory}\n\n`;
+    const userPrompt = `preprompt: ${prompt?.prompt || ""}. Previous conversation:\n${conversationHistory}\n\n`;
 
-    // Create a ReadableStream that streams Gemini response in SSE format
+    // Create a ReadableStream that streams Ollama response in SSE format
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
 
         try {
-          // Generate content with streaming
-          const response = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: userPrompt,
+          // Generate content with streaming from Ollama
+          const response = await fetch("http://127.0.0.1:11434/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "minimax-m2.5:cloud", // Using the model currently available in Ollama
+              prompt: userPrompt,
+              stream: true,
+            }),
           });
-          if (!response) throw Error("Cannot stapplish a connection. ")
+          
+          if (!response.ok || !response.body) {
+            throw new Error("Cannot establish a connection to Ollama.");
+          }
 
-          // Stream the response character by character for better UX
-          for await (const chunk of response) {
-            const content = chunk.text;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
 
-            if (content) {
-              // Split content into smaller chunks (words or characters) for smoother streaming
-              const words = content.split(" ");
-              
-              for (const word of words) {
-                if (word) {
-                  // Send each word with a space in SSE format
-                  const sseMessage = `data: ${JSON.stringify({ content: word + " " })}\n\n`;
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+
+            for (const line of lines) {
+              if (line.trim() === "") continue;
+              try {
+                const parsed = JSON.parse(line);
+                if (parsed.response) {
+                  // Send each chunk in SSE format
+                  const sseMessage = `data: ${JSON.stringify({ content: parsed.response })}\n\n`;
                   controller.enqueue(encoder.encode(sseMessage));
-                  
-                  // Add a small delay between words for visible streaming effect
-                  await new Promise((resolve) => setTimeout(resolve, 30));
                 }
+              } catch (e) {
+                // Ignore parse errors on incomplete chunks
               }
             }
           }
@@ -75,7 +79,7 @@ export const OpenaiService = {
           // Close the stream
           controller.close();
         } catch (error) {
-          console.error("Google Gemini streaming error:", error);
+          console.error("Ollama streaming error:", error);
           controller.error(error);
         }
       },
