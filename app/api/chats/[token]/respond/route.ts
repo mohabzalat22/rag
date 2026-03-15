@@ -1,5 +1,5 @@
 import { ChatService } from "@/services/chat.service";
-import { OpenaiService } from "@/services/openai.service";
+import { AIService } from "@/services/ai.service";
 import { NextRequest } from "next/server";
 
 export async function GET(
@@ -20,7 +20,7 @@ export async function GET(
     }
 
     // Get the streaming response
-    const stream = await OpenaiService.respond(chat.id);
+    const stream = await AIService.respond(chat.id);
 
     // Return the stream with proper SSE headers
     return new Response(stream, {
@@ -71,7 +71,7 @@ export async function POST(
     }
 
     // Save the AI response to the database
-    const savedMessage = await OpenaiService.saveResponse(chat.id, message);
+    const savedMessage = await AIService.saveResponse(chat.id, message);
 
     if (!savedMessage) {
       return new Response(JSON.stringify({ error: "Failed to save message" }), {

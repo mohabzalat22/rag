@@ -94,9 +94,6 @@ export default function ChatMessagesClient({
 
     // Submit form action
     formAction(formData);
-
-    // Start streaming AI response
-    streamAIResponse();
   };
 
   // Function to handle streaming AI response
@@ -178,6 +175,9 @@ export default function ChatMessagesClient({
     if (state?.success) {
       // Refresh messages from server to get the actual IDs and any AI response
       fetchChatMessages();
+    }
+    if (state?.shouldStream) {
+      streamAIResponse();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);

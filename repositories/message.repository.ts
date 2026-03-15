@@ -6,7 +6,10 @@ export const MessageRespository = {
     prisma.message.create({ data }),
 
   getAll: (chatId: number): Promise<Message[]> =>
-    prisma.message.findMany({ where: { chatId: chatId } }),
+    prisma.message.findMany({ 
+      where: { chatId: chatId },
+      orderBy: { createdAt: 'asc' } 
+    }),
 
   getById: (id: number): Promise<Message | null> =>
     prisma.message.findUnique({ where: { id } }),

@@ -18,32 +18,47 @@ export const AIService = {
 
     const prompt = await prisma.prompt.findFirst();
 
+    // Format messages for conversation context as an array of structured objects
+    const formattedMessages: { role: string; content: string }[] = [];
+    
+    if (prompt?.prompt) {
+      formattedMessages.push({
+        role: "system",
+        content: prompt.prompt
+      });
+    }
+
+    const conversationHistory = messages.map((m) => ({
+      role: m.actor === Actor.USER ? "user" : "assistant",
+      content: m.message
+    }));
+
+    formattedMessages.push(...conversationHistory);
+
     // Create a ReadableStream that streams Ollama response in SSE format
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
 
         try {
-          // Generate content with streaming from Ollama
-            const response = await fetch(`${process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434"}/api/chat`, {
+          const requestBody = {
+            model: process.env.OLLAMA_MODEL || "minimax-m2.5:cloud", // Using the model currently available in Ollama
+            messages: formattedMessages,
+            stream: true,
+          };
+          console.log("SENDING TO OLLAMA:", JSON.stringify(requestBody, null, 2));
+
+          // Generate content with streaming from Ollama using the chat endpoint
+          const response = await fetch(`${process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434"}/api/chat`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              model: process.env.OLLAMA_MODEL || "minimax-m2.5:cloud", // Using the model currently available in Ollama
-              messages: [
-                ...(prompt?.prompt ? [{ role: "system", content: prompt.prompt }] : []),
-                ...messages.map((m) => ({
-                  role: m.actor === Actor.USER ? "user" : "assistant",
-                  content: m.message,
-                })),
-              ],
-              stream: true,
-            }),
+            body: JSON.stringify(requestBody),
           });
           
           if (!response.ok || !response.body) {
+            console.error("Ollama Response Not OK:", response.status, response.statusText);
             throw new Error(`Cannot establish a connection to Ollama connect on ${process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434"}.`);
           }
 
@@ -68,9 +83,12 @@ export const AIService = {
                 }
               } catch (e) {
                 // Ignore parse errors on incomplete chunks
+                console.error("Parse error on chunk:", line);
               }
             }
           }
+
+          console.log("OLLAMA STREAM DONE");
 
           // Send done signal
           controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
